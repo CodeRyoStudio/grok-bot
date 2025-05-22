@@ -1,12 +1,14 @@
 from credibility import CredibilityScorer
 from datetime import datetime, timedelta
 import json
+import asyncio
 
 class Functions:
     def __init__(self, grok_api, context_manager):
         self.grok_api = grok_api
         self.context_manager = context_manager
         self.credibility_scorer = CredibilityScorer()
+        self.loop = asyncio.get_event_loop()
 
     async def get_current_time(self, timezone: str) -> str:
         from zoneinfo import ZoneInfo
@@ -15,12 +17,11 @@ class Functions:
     async def call_grok_api(self, messages: list, search_parameters: dict = None) -> dict:
         response = await self.grok_api.call_api(messages, search_parameters)
         if search_parameters and 'choices' in response and response['choices']:
-            # 處理 citations 作為搜尋結果
             citations = response.get('citations', [])
             search_results = [
                 {
-                    "source": "unknown",  # API 未提供來源類型，設為 unknown
-                    "content": response['choices'][0]['message']['content'],  # 使用回應內容
+                    "source": "unknown",
+                    "content": response['choices'][0]['message']['content'][:1000],  # 限制內容長度
                     "url": citation,
                     "score": 0
                 } for citation in citations
@@ -38,13 +39,14 @@ class Functions:
         return response['choices'][0]['message']['content']
 
     async def finalize_response(self, content: str, citations: list = None) -> str:
+        content = content[:1000]  # 限制長度
         if citations:
             citation_text = "\n來源:\n" + "\n".join([f"[{url}]({url})" for url in citations])
             return f"{content}{citation_text}"
         return content
 
     async def summarize_context(self, channel_id: str) -> str:
-        context = self.context_manager.get_context(channel_id)
+        context = await self.context_manager.get_context(channel_id)
         search_results = context.get('search_results', [])
         reliable_results = [r for r in search_results if r['score'] >= 60]
         
@@ -59,7 +61,7 @@ class Functions:
         else:
             content = "根據以下可靠來源:\n" + "\n".join([f"- {r['content']} (分數: {r['score']})" for r in reliable_results])
         
-        return content
+        return content[:1000]  # 限制長度
 
     async def execute_function(self, function_name: str, parameters: dict):
         if function_name == 'get_current_time':
