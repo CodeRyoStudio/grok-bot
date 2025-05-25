@@ -130,9 +130,9 @@ async def search_function(query, sources, max_results):
             "parameters": {"response": "Error parsing search results"}
         }
 
-async def summary_function(query, history, insufficient_data=False):
+async def summary_function(query, history, insufficient_data=False,language="en"):
     template = env.get_template("summary.jinja")
-    prompt = template.render(query=query, history=history, insufficient_data=insufficient_data)
+    prompt = template.render(query=query, history=history, insufficient_data=insufficient_data,language=language)
     response = await call_xai_api(prompt)
     if "error" in response:
         logger.error(f"Summary function error: {response['error']}")
@@ -211,7 +211,7 @@ async def middleware_layer(user_query, previous_response=None, search_history=No
 
 @tree.command(name="ask", description="Ask a question with search and reasoning")
 @app_commands.describe(query="Your question or request")
-async def ask(interaction: discord.Interaction, query: str):
+async def ask(interaction: discord.Interaction, query: str,language: str = "en"):
     await interaction.response.defer(ephemeral=True)
     
     search_history = None
@@ -316,7 +316,8 @@ async def ask(interaction: discord.Interaction, query: str):
             result = await summary_function(
                 parameters["query"],
                 parameters["history"],
-                insufficient_data=insufficient_data
+                insufficient_data=insufficient_data,
+                language=language
             )
             response_text = result["response"]
             if insufficient_data:

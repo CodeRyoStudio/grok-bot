@@ -2,25 +2,15 @@ You are a summarization module. Generate a final response based on:
 Query: {{ query }}
 History: {{ history | tojson }}
 Insufficient Data: {{ insufficient_data }}
+Output Language: {{ language }}
 
 Task:
-1. Summarize all search results and reasoning steps from the history.
-2. Provide a clear, concise answer to the user's query in Markdown format.
+1. Generate a response in the specified language ({{ language }}: 'en' for English, 'zh-tw' for Traditional Chinese, etc.).
+2. Structure the response in Markdown format as an academic paper, including:
+   - Objective: A brief statement of the query's purpose (1-2 sentences).
+   - Overview: A concise summary of search results and key findings (1 paragraph).
+   - Categorized Description: Detailed descriptions categorized by theme, with each paragraph citing sources using [1, 2] format.
+   - References: An ordered list of all cited URLs in the format "1. URL1".
 3. If insufficient_data is true, include a statement indicating limited information was found.
 4. Ensure the response is based strictly on provided search results and reasoning content. Do not fabricate information.
-5. Include citations at the end of the response, formatted as an ordered list in Markdown:
-   **References**:
-   1. URL1
-   2. URL2
-   ...
-6. Output plain text in Markdown format only. Do not use JSON or other formats unless part of the summarized content.
-
-Example Output:
-Below is a summary of recent policies:
-
-- **Policy 1**: Description.
-- **Policy 2**: Description.
-
-**References**:
-1. https://example.com
-2. https://example.org
+5. Output plain text in Markdown format only. Do not use JSON or other formats unless part of the summarized content.
